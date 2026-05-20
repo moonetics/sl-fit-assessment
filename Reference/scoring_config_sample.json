@@ -1,0 +1,57 @@
+{
+  "product": "Community Fit Assessment",
+  "scale": {
+    "1": "Sangat tidak setuju",
+    "2": "Tidak setuju",
+    "3": "Setuju",
+    "4": "Sangat setuju"
+  },
+  "outputs": {
+    "community_fit_score": "0-100",
+    "competitive_fit_score": "0-100",
+    "risk_level": [
+      "Low",
+      "Medium",
+      "High"
+    ],
+    "honesty_status": [
+      "Valid",
+      "Questionable",
+      "Invalid"
+    ],
+    "final_status": [
+      "Accepted",
+      "Accepted as Casual Member",
+      "Accepted with Trial",
+      "Manual Review",
+      "Watchlist",
+      "Retest",
+      "Rejected"
+    ]
+  },
+  "community_weights": {
+    "Online Behavior": 12,
+    "Toxicity Control": 14,
+    "Sportsmanship": 10,
+    "Respect for Casual Members": 10,
+    "Conflict Handling": 12,
+    "Rule Acceptance": 12,
+    "Accountability": 10,
+    "Drama Risk": 12,
+    "Community Commitment": 8
+  },
+  "competitive_weights": {
+    "Competitive Attitude": 45,
+    "Sportsmanship": 25,
+    "Accountability": 10,
+    "Rule Acceptance": 10,
+    "Respect for Casual Members": 10
+  },
+  "code_statuses": [
+    "Unused",
+    "In Progress",
+    "Completed",
+    "Expired",
+    "Locked"
+  ]
+}

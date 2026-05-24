@@ -91,6 +91,28 @@ class PhaseSixAdminDashboardTest extends TestCase
             ->assertSee('Discord ID: 987654321098765432');
     }
 
+    public function test_admin_dashboard_lists_and_filters_five_risk_levels(): void
+    {
+        $this->actingAsAdmin();
+        $lowRisk = $this->participantWithResult('Very Low', 'Alya Safe');
+        $criticalRisk = $this->participantWithResult('Critical', 'Bara Critical');
+
+        $this->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('Very Low')
+            ->assertSee('Low')
+            ->assertSee('Medium')
+            ->assertSee('High')
+            ->assertSee('Critical')
+            ->assertSee($lowRisk->display_name)
+            ->assertSee($criticalRisk->display_name);
+
+        $this->get(route('admin.dashboard', ['risk_level' => 'Critical']))
+            ->assertOk()
+            ->assertSee('Bara Critical')
+            ->assertDontSee('Alya Safe');
+    }
+
     public function test_admin_can_view_read_only_question_bank_with_metadata(): void
     {
         $this->seed(QuestionBankSeeder::class);
@@ -239,18 +261,20 @@ class PhaseSixAdminDashboardTest extends TestCase
         );
     }
 
-    private function participantWithResult(): Participant
+    private function participantWithResult(string $riskLevel = 'Low', string $displayName = 'Naya'): Participant
     {
+        $displayCode = 'CFA-RESULT-'.strtoupper(substr(hash('sha256', $displayName.$riskLevel), 0, 10));
+
         $code = AccessCode::create([
-            'code_hash' => hash('sha256', 'CFA-RESULT-TEST'),
-            'display_code' => 'CFA-RESULT-TEST',
+            'code_hash' => hash('sha256', $displayCode),
+            'display_code' => $displayCode,
             'status' => AccessCode::STATUS_COMPLETED,
             'completed_at' => now(),
         ]);
 
         $participant = Participant::create([
             'access_code_id' => $code->id,
-            'display_name' => 'Naya',
+            'display_name' => $displayName,
             'discord_username' => '@naya',
         ]);
 
@@ -259,7 +283,7 @@ class PhaseSixAdminDashboardTest extends TestCase
             'community_fit_score' => 76,
             'competitive_fit_score' => 42,
             'risk_score' => 28,
-            'risk_level' => 'Low',
+            'risk_level' => $riskLevel,
             'honesty_status' => 'Valid',
             'member_type' => 'Casual Community Member',
             'final_status' => 'Manual Review',

@@ -175,7 +175,7 @@ class ParticipantAssessmentController extends Controller
             'progress' => (int) round(($order / $total) * 100),
             'answeredOrders' => $answeredOrders,
             'missingOrders' => $this->missingOrders($total, $answeredOrders),
-            'glossaryNotes' => $this->glossaryNotes($question->text),
+            'glossaryNotes' => $this->glossaryNotes($question),
         ]);
     }
 
@@ -450,18 +450,41 @@ class ParticipantAssessmentController extends Controller
     /**
      * @return array<string, string>
      */
-    private function glossaryNotes(string $questionText): array
+    private function glossaryNotes(Question $question): array
     {
         $notes = [];
-        $normalizedText = mb_strtolower($questionText);
+        $displayedText = implode(' ', $this->displayedQuestionText($question));
 
         foreach (config('assessment_glossary') as $term => $description) {
-            if (str_contains($normalizedText, mb_strtolower($term))) {
+            if ($this->containsGlossaryTerm($displayedText, $term)) {
                 $notes[$term] = $description;
             }
         }
 
         return $notes;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function displayedQuestionText(Question $question): array
+    {
+        $text = [$question->text];
+
+        foreach ($question->public_options ?? [] as $option) {
+            if (is_scalar($option)) {
+                $text[] = (string) $option;
+            }
+        }
+
+        return $text;
+    }
+
+    private function containsGlossaryTerm(string $text, string $term): bool
+    {
+        $pattern = '/(?<![\p{L}\p{N}])'.preg_quote($term, '/').'(?![\p{L}\p{N}])/iu';
+
+        return preg_match($pattern, $text) === 1;
     }
 
     private function deviceId(Request $request): string

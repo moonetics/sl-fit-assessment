@@ -55,7 +55,9 @@ class PhaseNineFutureImprovementsTest extends TestCase
             ->assertOk()
             ->assertSee('Naya Limpul')
             ->assertSee('111111111111111111')
-            ->assertSee('SLFA-');
+            ->assertSee('SLFA-')
+            ->assertSee('Copy all')
+            ->assertSee(rawurlencode(' - Naya Limpul (111111111111111111)'), false);
     }
 
     public function test_batch_generate_rejects_missing_discord_user_id_rows(): void

@@ -23,6 +23,7 @@ class DashboardController extends Controller
             'codes' => $query->paginate(20)->withQueryString(),
             'filters' => $request->only(['q', 'status', 'risk_level', 'final_status', 'batch_id', 'source']),
             'codeStatuses' => AccessCode::STATUSES,
+            'riskLevels' => config('assessment_scoring.risk_levels'),
             'finalStatuses' => config('assessment_scoring.final_statuses'),
             'batches' => CodeBatch::query()->latest()->get(),
         ]);

@@ -10,9 +10,11 @@
     "community_fit_score": "0-100",
     "competitive_fit_score": "0-100",
     "risk_level": [
+      "Very Low",
       "Low",
       "Medium",
-      "High"
+      "High",
+      "Critical"
     ],
     "honesty_status": [
       "Valid",

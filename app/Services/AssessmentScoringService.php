@@ -237,7 +237,11 @@ class AssessmentScoringService
 
     private function riskLevel(int $riskScore, int $heavyRedFlags, int $mediumRedFlags): string
     {
-        if ($riskScore >= 65 || $heavyRedFlags >= 1) {
+        if ($riskScore >= 80 || $heavyRedFlags >= 2) {
+            return 'Critical';
+        }
+
+        if ($riskScore >= 65 || $heavyRedFlags === 1) {
             return 'High';
         }
 
@@ -245,7 +249,26 @@ class AssessmentScoringService
             return 'Medium';
         }
 
-        return 'Low';
+        if ($riskScore >= 20) {
+            return 'Low';
+        }
+
+        return 'Very Low';
+    }
+
+    private function isLowOrBelowRisk(string $riskLevel): bool
+    {
+        return in_array($riskLevel, ['Very Low', 'Low'], true);
+    }
+
+    private function isHighOrAboveRisk(string $riskLevel): bool
+    {
+        return in_array($riskLevel, ['High', 'Critical'], true);
+    }
+
+    private function isMediumOrAboveRisk(string $riskLevel): bool
+    {
+        return in_array($riskLevel, ['Medium', 'High', 'Critical'], true);
     }
 
     /**
@@ -742,7 +765,7 @@ class AssessmentScoringService
             $reasons[] = "{$mediumSuspicious} suspicious flag sedang perlu dicek admin.";
         }
 
-        if (count($reasons) === 1 && $riskLevel === 'Low') {
+        if (count($reasons) === 1 && $this->isLowOrBelowRisk($riskLevel)) {
             $reasons[] = 'Tidak ada red flag berat dan kategori risiko utama masih stabil.';
         }
 
@@ -805,11 +828,11 @@ class AssessmentScoringService
     {
         $score = fn (string $category): int => $categoryScores[$category]['score'] ?? 0;
 
-        if ($communityFit >= 75 && $competitiveFit >= 75 && $riskLevel === 'Low') {
+        if ($communityFit >= 75 && $competitiveFit >= 75 && $this->isLowOrBelowRisk($riskLevel)) {
             return 'Competitive Racer';
         }
 
-        if ($communityFit >= 70 && $competitiveFit < 55 && $riskLevel !== 'High') {
+        if ($communityFit >= 70 && $competitiveFit < 55 && ! $this->isHighOrAboveRisk($riskLevel)) {
             return 'Casual Community Member';
         }
 
@@ -821,7 +844,7 @@ class AssessmentScoringService
             return 'Quiet but Safe';
         }
 
-        if ($competitiveFit >= 75 && $riskLevel !== 'Low') {
+        if ($competitiveFit >= 75 && ! $this->isLowOrBelowRisk($riskLevel)) {
             return 'Competitive but Risky';
         }
 
@@ -833,7 +856,7 @@ class AssessmentScoringService
             return 'Rule-Resistant Member';
         }
 
-        if (($riskLevel === 'High' && $communityFit < 60) || ($honestyStatus === 'Invalid' && $heavyRedFlags > 0)) {
+        if (($this->isHighOrAboveRisk($riskLevel) && $communityFit < 60) || ($honestyStatus === 'Invalid' && $heavyRedFlags > 0)) {
             return 'Not Recommended';
         }
 
@@ -851,7 +874,7 @@ class AssessmentScoringService
         int $heavyRedFlags,
         array $suspiciousFlags,
     ): string {
-        if ($honestyStatus === 'Invalid' && $riskLevel === 'High') {
+        if ($honestyStatus === 'Invalid' && $this->isHighOrAboveRisk($riskLevel)) {
             return 'Rejected';
         }
 
@@ -863,7 +886,7 @@ class AssessmentScoringService
             return 'Rejected';
         }
 
-        if ($heavyRedFlags === 1 || $riskLevel === 'High') {
+        if ($heavyRedFlags === 1 || $this->isHighOrAboveRisk($riskLevel)) {
             return 'Watchlist';
         }
 
@@ -871,19 +894,19 @@ class AssessmentScoringService
             return 'Manual Review';
         }
 
-        if ($competitiveFit >= 75 && $riskLevel !== 'Low') {
+        if ($competitiveFit >= 75 && $this->isMediumOrAboveRisk($riskLevel)) {
             return 'Manual Review';
         }
 
-        if ($communityFit >= 70 && $competitiveFit < 55 && $riskLevel !== 'High') {
+        if ($communityFit >= 70 && $competitiveFit < 55 && ! $this->isHighOrAboveRisk($riskLevel)) {
             return 'Accepted as Casual Member';
         }
 
-        if ($communityFit >= 80 && $riskLevel === 'Low' && $honestyStatus === 'Valid') {
+        if ($communityFit >= 80 && $this->isLowOrBelowRisk($riskLevel) && $honestyStatus === 'Valid') {
             return 'Accepted';
         }
 
-        if ($communityFit >= 65 && $riskLevel !== 'High' && $honestyStatus === 'Valid') {
+        if ($communityFit >= 65 && ! $this->isHighOrAboveRisk($riskLevel) && $honestyStatus === 'Valid') {
             return 'Accepted with Trial';
         }
 

@@ -37,6 +37,14 @@ return [
         'offline_sync_count' => 5,
     ],
 
+    'risk_levels' => [
+        'Very Low',
+        'Low',
+        'Medium',
+        'High',
+        'Critical',
+    ],
+
     'final_statuses' => [
         'Accepted',
         'Accepted as Casual Member',

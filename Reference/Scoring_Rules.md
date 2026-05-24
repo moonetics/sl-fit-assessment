@@ -4,7 +4,7 @@
 ## 1. Output Utama
 - Community Fit Score: 0–100
 - Competitive Fit Score: 0–100
-- Risk Level: Low, Medium, High
+- Risk Level: Very Low, Low, Medium, High, Critical
 - Honesty Status: Valid, Questionable, Invalid
 - Member Type:
   - Competitive Racer
@@ -92,9 +92,11 @@ risk_score =
 ## 7. Risk Level
 | Rule | Risk Level |
 |---|---|
-| risk_score < 35 and heavy_red_flags = 0 | Low |
+| risk_score < 20 and heavy_red_flags = 0 | Very Low |
+| risk_score 20–34 and heavy_red_flags = 0 | Low |
 | risk_score 35–64 or medium_red_flags >= 2 | Medium |
-| risk_score >= 65 or heavy_red_flags >= 1 | High |
+| risk_score 65–79 or heavy_red_flags = 1 | High |
+| risk_score >= 80 or heavy_red_flags >= 2 | Critical |
 
 ## 8. Honesty Status
 | Rule | Honesty Status |
@@ -116,25 +118,25 @@ Manual Review jika:
 
 ## 10. Final Status Rules
 Order of precedence:
-1. If honesty_status = Invalid and risk_level != High: Retest.
-2. If honesty_status = Invalid and risk_level = High: Rejected.
+1. If honesty_status = Invalid and risk_level is not High/Critical: Retest.
+2. If honesty_status = Invalid and risk_level = High/Critical: Rejected.
 3. If heavy_red_flags >= 2: Rejected.
-4. If heavy_red_flags = 1 or risk_level = High: Watchlist.
+4. If heavy_red_flags = 1 or risk_level = High/Critical: Watchlist.
 5. If honesty_status = Questionable: Manual Review.
-6. If competitive_fit >= 75 and risk_level != Low: Manual Review or Watchlist.
-7. If community_fit >= 80 and risk_level = Low and honesty_status = Valid: Accepted.
-8. If community_fit >= 70 and competitive_fit < 55 and risk_level != High: Accepted as Casual Member.
-9. If community_fit >= 65 and risk_level != High: Accepted with Trial.
+6. If competitive_fit >= 75 and risk_level is Medium or above: Manual Review or Watchlist.
+7. If community_fit >= 80 and risk_level = Very Low/Low and honesty_status = Valid: Accepted.
+8. If community_fit >= 70 and competitive_fit < 55 and risk_level is not High/Critical: Accepted as Casual Member.
+9. If community_fit >= 65 and risk_level is not High/Critical: Accepted with Trial.
 10. Else: Manual Review or Rejected based on admin policy.
 
 ## 11. Member Type Rules
 | Condition | Member Type |
 |---|---|
-| community_fit >= 75, competitive_fit >= 75, risk_level = Low | Competitive Racer |
-| community_fit >= 70, competitive_fit < 55, risk_level != High | Casual Community Member |
+| community_fit >= 75, competitive_fit >= 75, risk_level = Very Low/Low | Competitive Racer |
+| community_fit >= 70, competitive_fit < 55, risk_level is not High/Critical | Casual Community Member |
 | respect >= 75, online_behavior >= 75, commitment >= 65 | Supportive Member |
 | drama_risk >= 75, online_behavior >= 70, commitment 45–70, competitive_fit < 55 | Quiet but Safe |
-| competitive_fit >= 75 and risk_level != Low | Competitive but Risky |
+| competitive_fit >= 75 and risk_level is Medium or above | Competitive but Risky |
 | drama_risk < 50 or conflict_handling < 50 | Drama-Prone Member |
 | rule_acceptance < 50 | Rule-Resistant Member |
-| risk_level = High and community_fit < 60 | Not Recommended |
+| risk_level = High/Critical and community_fit < 60 | Not Recommended |

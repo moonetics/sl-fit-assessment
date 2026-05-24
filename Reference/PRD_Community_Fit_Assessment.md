@@ -361,9 +361,11 @@ Competitive Fit Score =
 ### Risk Level
 | Kondisi | Risk Level |
 |---|---|
-| Risk score < 35 dan red flag berat = 0 | Low |
+| Risk score < 20 dan red flag berat = 0 | Very Low |
+| Risk score 20–34 dan red flag berat = 0 | Low |
 | Risk score 35–64 atau red flag sedang ≥ 2 | Medium |
-| Risk score ≥ 65 atau red flag berat ≥ 1 | High |
+| Risk score 65–79 atau red flag berat = 1 | High |
+| Risk score ≥ 80 atau red flag berat ≥ 2 | Critical |
 
 Risk score dihitung dari:
 ```text
@@ -405,25 +407,25 @@ Peserta masuk Manual Review jika:
 ### Status Penerimaan
 | Kondisi | Final Status |
 |---|---|
-| Community Fit ≥ 80, Risk Low, Honesty Valid, red flag berat 0 | Accepted |
+| Community Fit ≥ 80, Risk Very Low/Low, Honesty Valid, red flag berat 0 | Accepted |
 | Community Fit ≥ 70, Competitive Fit < 50, Risk Low/Medium rendah | Accepted as Casual Member |
 | Community Fit 65–79, Risk Low/Medium, Honesty Valid | Accepted with Trial |
 | Honesty Questionable atau suspicious sedang | Manual Review |
-| Red flag berat 1 atau Risk High tetapi tidak ekstrem | Watchlist |
+| Red flag berat 1 atau Risk High/Critical tetapi tidak ekstrem | Watchlist |
 | Honesty Invalid dan risiko tidak berat | Retest |
-| Risk High + red flag berat ≥ 2 atau rule resistance tinggi | Rejected |
+| Risk Critical + red flag berat ≥ 2 atau rule resistance tinggi | Rejected |
 
 ### Member Type Logic
 | Member Type | Logic |
 |---|---|
-| Competitive Racer | Competitive Fit ≥ 75, Community Fit ≥ 75, Risk Low. |
+| Competitive Racer | Competitive Fit ≥ 75, Community Fit ≥ 75, Risk Very Low/Low. |
 | Casual Community Member | Community Fit ≥ 70, Competitive Fit < 55, Risk Low/Medium rendah. |
 | Supportive Member | Respect + Online Behavior + Commitment tinggi, Competitive sedang/rendah. |
 | Quiet but Safe | Online Behavior tinggi, Drama Risk rendah, Commitment sedang, Competitive rendah. |
-| Competitive but Risky | Competitive ≥ 75, Risk Medium/High. |
+| Competitive but Risky | Competitive ≥ 75, Risk Medium/High/Critical. |
 | Drama-Prone Member | Drama Risk rendah atau conflict flags tinggi. |
 | Rule-Resistant Member | Rule Acceptance rendah atau admin-resistance flag. |
-| Not Recommended | Risk High + Honesty Invalid/red flags berat. |
+| Not Recommended | Risk High/Critical + Honesty Invalid/red flags berat. |
 
 ---
 
@@ -804,7 +806,7 @@ Harus menjelaskan:
 | participant_id | uuid | FK |
 | community_fit_score | int | 0–100 |
 | competitive_fit_score | int | 0–100 |
-| risk_level | enum | Low/Medium/High |
+| risk_level | enum | Very Low/Low/Medium/High/Critical |
 | honesty_status | enum | Valid/Questionable/Invalid |
 | member_type | enum |  |
 | final_status | enum |  |

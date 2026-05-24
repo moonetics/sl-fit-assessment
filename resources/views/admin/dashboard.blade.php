@@ -39,7 +39,7 @@
                 </select>
                 <select name="risk_level" class="h-11 rounded-md border border-[#cfc6b6] px-3 text-sm">
                     <option value="">All risk</option>
-                    @foreach (['Low', 'Medium', 'High'] as $risk)
+                    @foreach ($riskLevels as $risk)
                         <option value="{{ $risk }}" @selected(($filters['risk_level'] ?? '') === $risk)>{{ $risk }}</option>
                     @endforeach
                 </select>

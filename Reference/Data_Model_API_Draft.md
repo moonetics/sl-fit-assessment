@@ -86,7 +86,7 @@ erDiagram
 - participant_id uuid references participants(id)
 - community_fit_score integer
 - competitive_fit_score integer
-- risk_level enum(Low, Medium, High)
+- risk_level enum(Very Low, Low, Medium, High, Critical)
 - honesty_status enum(Valid, Questionable, Invalid)
 - member_type varchar
 - final_status varchar

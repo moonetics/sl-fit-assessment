@@ -10,6 +10,7 @@ use App\Models\Result;
 use App\Services\AssessmentScoringService;
 use Database\Seeders\QuestionBankSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class PhaseFiveScoringEngineTest extends TestCase
@@ -25,7 +26,7 @@ class PhaseFiveScoringEngineTest extends TestCase
         $this->assertGreaterThanOrEqual(90, $result->community_fit_score);
         $this->assertGreaterThanOrEqual(90, $result->competitive_fit_score);
         $this->assertLessThan(20, $result->risk_score);
-        $this->assertSame('Low', $result->risk_level);
+        $this->assertSame('Very Low', $result->risk_level);
         $this->assertSame('Valid', $result->honesty_status);
         $this->assertSame('Competitive Racer', $result->member_type);
         $this->assertSame('Accepted', $result->final_status);
@@ -76,7 +77,53 @@ class PhaseFiveScoringEngineTest extends TestCase
         $this->assertSame('Accepted as Casual Member', $result->final_status);
     }
 
-    public function test_red_flags_make_high_risk_and_never_accepted(): void
+    public function test_moderately_weak_risk_category_maps_to_low_risk(): void
+    {
+        $participant = $this->participantWithAnswers([
+            5 => '4',
+            6 => '1',
+            13 => '1',
+            23 => '1',
+            24 => '4',
+            45 => '1',
+        ]);
+
+        $result = app(AssessmentScoringService::class)->score($participant);
+
+        $this->assertGreaterThanOrEqual(20, $result->risk_score);
+        $this->assertLessThan(35, $result->risk_score);
+        $this->assertSame('Low', $result->risk_level);
+    }
+
+    public function test_two_medium_red_flags_make_medium_risk(): void
+    {
+        $participant = $this->participantWithAnswers([
+            48 => 'C',
+            49 => 'C',
+        ]);
+
+        $result = app(AssessmentScoringService::class)->score($participant);
+
+        $this->assertSame('Medium', $result->risk_level);
+        $this->assertSame('Manual Review', $result->final_status);
+        $this->assertCount(2, $result->red_flags);
+    }
+
+    public function test_single_heavy_red_flag_makes_high_risk_and_never_accepted(): void
+    {
+        $participant = $this->participantWithAnswers([
+            46 => 'D',
+        ]);
+
+        $result = app(AssessmentScoringService::class)->score($participant);
+
+        $this->assertSame('High', $result->risk_level);
+        $this->assertSame('Watchlist', $result->final_status);
+        $this->assertNotSame('Accepted', $result->final_status);
+        $this->assertCount(1, $result->red_flags);
+    }
+
+    public function test_multiple_heavy_red_flags_make_critical_risk_and_rejected(): void
     {
         $participant = $this->participantWithAnswers([
             46 => 'D',
@@ -85,11 +132,23 @@ class PhaseFiveScoringEngineTest extends TestCase
 
         $result = app(AssessmentScoringService::class)->score($participant);
 
-        $this->assertSame('High', $result->risk_level);
+        $this->assertSame('Critical', $result->risk_level);
         $this->assertSame('Rejected', $result->final_status);
         $this->assertNotSame('Accepted', $result->final_status);
         $this->assertCount(2, $result->red_flags);
         $this->assertNotEmpty($result->risk_reasons);
+    }
+
+    public function test_very_high_risk_score_makes_critical_without_heavy_red_flags(): void
+    {
+        $participant = $this->participantWithAnswers($this->severeRiskWithoutHeavyRedFlags());
+
+        $result = app(AssessmentScoringService::class)->score($participant);
+
+        $this->assertGreaterThanOrEqual(80, $result->risk_score);
+        $this->assertSame('Critical', $result->risk_level);
+        $this->assertSame('Watchlist', $result->final_status);
+        $this->assertCount(0, array_filter($result->red_flags, fn (array $flag): bool => $flag['severity'] === 'heavy'));
     }
 
     public function test_profile_code_is_generated_separately_from_final_decision(): void
@@ -172,9 +231,11 @@ class PhaseFiveScoringEngineTest extends TestCase
     {
         $this->seed(QuestionBankSeeder::class);
 
+        $displayCode = 'CFA-SCORING-'.Str::uuid();
+
         $accessCode = AccessCode::create([
-            'code_hash' => hash('sha256', 'CFA-SCORING-TEST'),
-            'display_code' => 'CFA-SCORING-TEST',
+            'code_hash' => hash('sha256', $displayCode),
+            'display_code' => $displayCode,
             'status' => AccessCode::STATUS_IN_PROGRESS,
             'started_at' => now()->subMinutes(20),
         ]);
@@ -210,5 +271,43 @@ class PhaseFiveScoringEngineTest extends TestCase
             $question->scoring_direction === 'normal_soft' => '3',
             default => '4',
         };
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function severeRiskWithoutHeavyRedFlags(): array
+    {
+        return [
+            3 => '1',
+            4 => '1',
+            5 => '4',
+            6 => '1',
+            13 => '1',
+            14 => '4',
+            15 => '1',
+            16 => '4',
+            17 => '1',
+            18 => '4',
+            21 => '1',
+            22 => '4',
+            23 => '1',
+            24 => '4',
+            33 => '1',
+            34 => '4',
+            35 => '1',
+            36 => '4',
+            40 => '4',
+            41 => '1',
+            42 => '4',
+            44 => '4',
+            45 => '1',
+            46 => 'C',
+            48 => 'C',
+            49 => 'C',
+            51 => 'C',
+            52 => 'C',
+            53 => 'C',
+        ];
     }
 }

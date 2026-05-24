@@ -195,6 +195,42 @@ class ParticipantMvpFlowTest extends TestCase
             ->assertDontSee('scoring_direction');
     }
 
+    public function test_glossary_term_does_not_match_inside_other_words(): void
+    {
+        $participant = $this->startedParticipant();
+        $order = app(QuestionOrderService::class)->orderForQuestion(
+            $participant,
+            Question::query()->where('question_number', 16)->value('id'),
+        );
+
+        $this->withSession([
+            'access_code_id' => $participant->access_code_id,
+            'participant_id' => $participant->id,
+        ])->get(route('assessment.questions.show', ['order' => $order]))
+            ->assertOk()
+            ->assertSee('Kalau banyak orang juga melanggar aturan')
+            ->assertDontSee('Catatan istilah')
+            ->assertDontSee('GG adalah singkatan');
+    }
+
+    public function test_glossary_term_is_detected_in_public_options(): void
+    {
+        $participant = $this->startedParticipant();
+        $order = app(QuestionOrderService::class)->orderForQuestion(
+            $participant,
+            Question::query()->where('question_number', 46)->value('id'),
+        );
+
+        $this->withSession([
+            'access_code_id' => $participant->access_code_id,
+            'participant_id' => $participant->id,
+        ])->get(route('assessment.questions.show', ['order' => $order]))
+            ->assertOk()
+            ->assertSee('GG, aku salah di akhir')
+            ->assertSee('Catatan istilah')
+            ->assertSee('GG adalah singkatan');
+    }
+
     public function test_submit_with_missing_answers_redirects_to_first_missing_question(): void
     {
         $participant = $this->startedParticipant();

@@ -32,6 +32,9 @@
             <div class="mt-6 rounded-md bg-[#f7f5ef] p-5">
                 <h2 class="text-xl font-black">SL Profile Interpretation</h2>
                 <p class="mt-2 text-sm leading-6 text-[#5d5850]">{{ $profileDetails['description'] ?? '-' }}</p>
+                <p class="mt-3 rounded-md bg-[#fff8db] p-3 text-sm font-semibold leading-6 text-[#5d5850]">
+                    Profile code adalah indikator gaya komunitas yang research-informed, bukan diagnosis, MBTI, label klinis, atau dasar otomatis final decision.
+                </p>
                 <div class="mt-4 grid gap-3 md:grid-cols-3">
                     <div>
                         <p class="text-sm font-black">Best fit</p>
@@ -69,6 +72,11 @@
                         <p class="rounded-md bg-[#fff1f1] p-3">{{ $flag['message'] ?? '-' }}</p>
                     @empty
                         <p class="rounded-md bg-[#f7f5ef] p-3">Tidak ada red flag berat.</p>
+                    @endforelse
+                    @forelse (($result?->suspicious_flags ?? []) as $flag)
+                        <p class="rounded-md bg-[#fff8db] p-3">{{ $flag['type'] ?? 'suspicious' }} · {{ $flag['message'] ?? '-' }}</p>
+                    @empty
+                        <p class="rounded-md bg-[#f7f5ef] p-3">Tidak ada suspicious flag.</p>
                     @endforelse
                 </div>
             </div>

@@ -32,7 +32,7 @@ return [
         'resume_count' => 8,
         'device_count' => 2,
         'min_answer_seconds' => 2,
-        'fast_answer_count' => 12,
+        'fast_answer_count' => 16,
         'visibility_change_count' => 20,
         'offline_sync_count' => 5,
     ],

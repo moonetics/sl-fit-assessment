@@ -61,8 +61,10 @@ class AnswerController extends Controller
             ], 409);
         }
 
+        $maxDisplayOrder = $questionOrder->total($participant);
+
         $validated = $request->validate([
-            'display_order' => ['required', 'integer', 'min:1', 'max:76'],
+            'display_order' => ['required', 'integer', 'min:1', 'max:'.$maxDisplayOrder],
             'answer_value' => ['required', 'string', 'max:10'],
             'client_saved_at' => ['nullable', 'date'],
             'draft_id' => ['nullable', 'string', 'max:80'],

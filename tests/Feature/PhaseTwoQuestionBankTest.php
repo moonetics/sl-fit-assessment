@@ -23,6 +23,10 @@ class PhaseTwoQuestionBankTest extends TestCase
             'admin_notes',
             'profile_axis',
             'profile_pole',
+            'subcategory',
+            'risk_tags',
+            'consistency_pair_id',
+            'research_basis',
         ] as $column) {
             $this->assertTrue(Schema::hasColumn('questions', $column), "Missing questions.{$column}.");
         }
@@ -33,8 +37,8 @@ class PhaseTwoQuestionBankTest extends TestCase
         $this->seed(QuestionBankSeeder::class);
         $this->seed(QuestionBankSeeder::class);
 
-        $this->assertSame(76, Question::query()->where('is_active', true)->count());
-        $this->assertSame(range(1, 76), Question::query()
+        $this->assertSame(96, Question::query()->where('is_active', true)->count());
+        $this->assertSame(range(1, 96), Question::query()
             ->where('is_active', true)
             ->orderBy('display_order')
             ->pluck('display_order')
@@ -58,9 +62,24 @@ class PhaseTwoQuestionBankTest extends TestCase
             58,
             ...range(41, 48),
             59,
-            ...range(49, 53),
+            77,
+            49,
+            78,
+            50,
+            79,
+            51,
+            80,
+            52,
+            81,
+            53,
+            82,
             60,
+            83,
+            84,
+            85,
+            86,
             ...range(61, 76),
+            ...range(87, 96),
         ];
 
         $this->assertSame($expectedInternalOrder, Question::query()
@@ -78,7 +97,7 @@ class PhaseTwoQuestionBankTest extends TestCase
             ->where('question_type', 'situational')
             ->get();
 
-        $this->assertCount(8, $situationalQuestions);
+        $this->assertCount(12, $situationalQuestions);
 
         foreach ($situationalQuestions as $question) {
             $this->assertSame(['A', 'B', 'C', 'D'], array_keys($question->public_options));
@@ -91,26 +110,33 @@ class PhaseTwoQuestionBankTest extends TestCase
     {
         $this->seed(QuestionBankSeeder::class);
 
-        $this->assertSame(7, Question::query()->where('is_consistency_item', true)->count());
+        $this->assertSame(11, Question::query()->where('is_consistency_item', true)->count());
 
         $this->assertSame([56], Question::query()->where('question_number', 54)->firstOrFail()->consistency_pair);
         $this->assertSame('unrealistic_perfection_check', Question::query()->where('question_number', 55)->firstOrFail()->consistency_check);
         $this->assertSame('impossible_perfection_check', Question::query()->where('question_number', 58)->firstOrFail()->consistency_check);
         $this->assertSame([21, 40, 48], Question::query()->where('question_number', 59)->firstOrFail()->consistency_pair);
         $this->assertSame([21, 40, 48], Question::query()->where('question_number', 60)->firstOrFail()->consistency_pair);
+        $this->assertSame('chat_tone_awareness', Question::query()->where('question_number', 83)->firstOrFail()->consistency_pair_id);
+        $this->assertSame([85], Question::query()->where('question_number', 86)->firstOrFail()->consistency_pair);
     }
 
     public function test_profile_questions_have_internal_axis_metadata(): void
     {
         $this->seed(QuestionBankSeeder::class);
 
-        $this->assertSame(16, Question::query()->whereNotNull('profile_axis')->count());
+        $this->assertSame(26, Question::query()->whereNotNull('profile_axis')->count());
         $this->assertSame(4, Question::query()->where('profile_axis', 'social')->count());
         $this->assertSame(4, Question::query()->where('profile_axis', 'play_drive')->count());
         $this->assertSame(4, Question::query()->where('profile_axis', 'rule_style')->count());
         $this->assertSame(4, Question::query()->where('profile_axis', 'conflict_style')->count());
+        $this->assertSame(2, Question::query()->where('profile_axis', 'team_style')->count());
+        $this->assertSame(2, Question::query()->where('profile_axis', 'competitive_style')->count());
+        $this->assertSame(2, Question::query()->where('profile_axis', 'drama_resistance')->count());
+        $this->assertSame(2, Question::query()->where('profile_axis', 'feedback_style')->count());
+        $this->assertSame(2, Question::query()->where('profile_axis', 'interaction_style')->count());
         $this->assertSame('S', Question::query()->where('question_number', 61)->firstOrFail()->profile_pole);
-        $this->assertSame('E', Question::query()->where('question_number', 76)->firstOrFail()->profile_pole);
+        $this->assertSame('T', Question::query()->where('question_number', 96)->firstOrFail()->profile_pole);
     }
 
     public function test_participant_payload_does_not_expose_internal_metadata(): void
@@ -131,13 +157,17 @@ class PhaseTwoQuestionBankTest extends TestCase
 
         foreach ([
             'category',
+            'subcategory',
             'scoring_direction',
             'scoring_map',
             'red_flag_options',
+            'risk_tags',
             'consistency_pair',
+            'consistency_pair_id',
             'consistency_check',
             'is_consistency_item',
             'admin_notes',
+            'research_basis',
             'profile_axis',
             'profile_pole',
         ] as $internalField) {

@@ -18,6 +18,7 @@
 - SL Profile Best Fit: {{ $profileDetails['best_fit'] ?? '-' }}
 - SL Profile Admin Guidance: {{ $profileDetails['admin_guidance'] ?? '-' }}
 @endif
+- SL Profile Note: Profile code adalah indikator gaya komunitas yang research-informed, bukan diagnosis, MBTI, label klinis, atau dasar otomatis final decision.
 
 ### Risk Reasons
 @forelse (($result?->risk_reasons ?? []) as $reason)
@@ -50,6 +51,13 @@
 - {{ $flag['message'] ?? 'Flag tercatat.' }}
 @empty
 - Tidak ada red flag berat.
+@endforelse
+
+### Suspicious Flags
+@forelse (($result?->suspicious_flags ?? []) as $flag)
+- {{ $flag['type'] ?? 'suspicious' }}: {{ $flag['message'] ?? 'Flag tercatat.' }}
+@empty
+- Tidak ada suspicious flag.
 @endforelse
 
 ### Recommendation

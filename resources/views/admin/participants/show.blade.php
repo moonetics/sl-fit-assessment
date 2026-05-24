@@ -37,6 +37,9 @@
                 <p class="mt-3 text-sm leading-6 text-[#6b665d]">
                     {{ $profileDetails['description'] ?? 'Non-clinical community profile. Dipakai sebagai konteks admin, bukan dasar otomatis untuk menerima atau menolak peserta.' }}
                 </p>
+                <p class="mt-3 rounded-md bg-[#fff8db] p-3 text-xs font-semibold leading-5 text-[#5d5850]">
+                    Profile code adalah indikator gaya komunitas yang research-informed. Ini bukan diagnosis, MBTI, label klinis, atau dasar otomatis final decision.
+                </p>
                 @if ($profileDetails)
                     <div class="mt-4 rounded-md bg-[#f7f5ef] p-3 text-sm">
                         <p class="font-black text-[#191919]">Best fit</p>

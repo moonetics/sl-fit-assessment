@@ -34,7 +34,7 @@ class ScoringSettingsController extends Controller
             'resume_count' => ['required', 'integer', 'min:1', 'max:100'],
             'device_count' => ['required', 'integer', 'min:1', 'max:10'],
             'min_answer_seconds' => ['required', 'integer', 'min:0', 'max:60'],
-            'fast_answer_count' => ['required', 'integer', 'min:1', 'max:76'],
+            'fast_answer_count' => ['required', 'integer', 'min:1', 'max:96'],
             'visibility_change_count' => ['required', 'integer', 'min:1', 'max:500'],
             'offline_sync_count' => ['required', 'integer', 'min:1', 'max:100'],
         ]);

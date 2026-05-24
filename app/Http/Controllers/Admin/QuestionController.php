@@ -24,6 +24,7 @@ class QuestionController extends Controller
                 'q',
                 'question_type',
                 'category',
+                'subcategory',
                 'scoring_direction',
                 'profile_axis',
                 'active',
@@ -32,6 +33,7 @@ class QuestionController extends Controller
             ]),
             'summary' => $this->summary(),
             'categories' => $this->distinctValues('category'),
+            'subcategories' => $this->distinctValues('subcategory'),
             'scoringDirections' => $this->distinctValues('scoring_direction'),
             'profileAxes' => $this->distinctValues('profile_axis'),
         ]);
@@ -46,6 +48,8 @@ class QuestionController extends Controller
                 $builder
                     ->where('text', 'like', $term)
                     ->orWhere('category', 'like', $term)
+                    ->orWhere('subcategory', 'like', $term)
+                    ->orWhere('research_basis', 'like', $term)
                     ->orWhere('question_number', 'like', $term);
             });
         }
@@ -56,6 +60,10 @@ class QuestionController extends Controller
 
         if ($request->filled('category')) {
             $query->where('category', $request->string('category'));
+        }
+
+        if ($request->filled('subcategory')) {
+            $query->where('subcategory', $request->string('subcategory'));
         }
 
         if ($request->filled('scoring_direction')) {

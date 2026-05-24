@@ -45,7 +45,7 @@
                             </p>
                             <div class="mt-8 grid max-w-2xl gap-3 sm:grid-cols-3">
                                 <div class="rounded-md border border-[#e4dccd] bg-white p-4">
-                                    <p class="text-2xl font-black">76</p>
+                                    <p class="text-2xl font-black">Flow</p>
                                     <p class="mt-1 text-xs font-semibold leading-5 text-[#6b665d]">Pertanyaan singkat</p>
                                 </div>
                                 <div class="rounded-md border border-[#e4dccd] bg-white p-4">

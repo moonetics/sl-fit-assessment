@@ -1,4 +1,4 @@
-<x-layouts.participant title="Assessment Question {{ $order }}">
+<x-layouts.participant title="Assessment">
     <style>
         .answer-input:checked + .answer-card {
             border-color: #0f766e;
@@ -15,42 +15,23 @@
         .answer-input:checked + .answer-card .selected-badge {
             display: inline-flex;
         }
-
-        .question-nav-legend-box {
-            width: 14px;
-            height: 14px;
-            display: inline-block;
-            border-radius: 4px;
-            vertical-align: -2px;
-        }
-
-        .question-nav-legend-box.is-answered {
-            border: 2px solid #0f766e;
-            background: #0f766e;
-        }
-
-        .question-nav-legend-box.is-unanswered {
-            border: 2px solid #cfc6b6;
-            background: #ffffff;
-        }
     </style>
     <section class="relative rounded-lg border border-[#d7cfbf] bg-white p-5 shadow-[0_20px_70px_rgba(38,31,15,0.08)] sm:p-8">
         @php($isCurrentAnswered = ! is_null($answerValue))
         <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
                 <p class="text-sm font-bold uppercase tracking-[0.16em] text-[#8a6d16]">Assessment</p>
-                <h1 class="mt-2 text-2xl font-black text-[#191919]">Soal {{ $order }} dari {{ $total }}</h1>
+                <h1 class="mt-2 text-2xl font-black text-[#191919]">Pilih jawaban yang paling terasa cocok</h1>
             </div>
             <div class="flex min-h-8 items-center gap-2">
                 <span id="autosave-status" class="invisible rounded-md border border-[#d7cfbf] bg-[#fffdf7] px-3 py-1 text-xs font-bold text-[#514c45]">
                     Tersimpan
                 </span>
-                <span class="rounded-md bg-[#f9d65c] px-3 py-1 text-sm font-black text-[#191919]">{{ $progress }}%</span>
             </div>
         </div>
 
         <div class="mt-5 h-3 overflow-hidden rounded-full bg-[#eee6d6]">
-            <div class="h-full rounded-full bg-[#8f1d1d]" style="width: {{ $progress }}%"></div>
+            <div class="h-full rounded-full bg-[#8f1d1d]" style="width: {{ $progress }}%" aria-valuenow="{{ $progress }}" aria-valuemin="0" aria-valuemax="100" role="progressbar"></div>
         </div>
 
         @error('answer_value')
@@ -59,7 +40,7 @@
             </div>
         @enderror
 
-        <div class="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_250px]">
+        <div class="mt-8">
             <form
                 method="POST"
                 action="{{ route('assessment.questions.answer', ['order' => $order]) }}"
@@ -130,45 +111,11 @@
                             </button>
                         @endif
                         <button type="submit" name="direction" value="next" class="inline-flex min-h-12 items-center justify-center rounded-md bg-[#191919] px-5 text-sm font-bold text-white transition hover:bg-[#303030]">
-                            {{ $order >= $total ? 'Review answers' : 'Next' }}
+                            {{ $order >= $total ? 'Review jawaban' : 'Next' }}
                         </button>
                     </div>
                 </div>
             </form>
-
-            <aside class="rounded-md border border-[#d7cfbf] bg-[#fffdf7] p-4 lg:sticky lg:top-5 lg:self-start">
-                <div class="flex items-center justify-between gap-3">
-                    <h2 class="text-sm font-black text-[#191919]">Navigasi soal</h2>
-                    <span class="text-xs font-semibold text-[#6b665d]">{{ count($answeredOrders) }}/{{ $total }}</span>
-                </div>
-                <div class="question-nav-grid mt-4" style="display: grid; grid-template-columns: repeat(5, 38px); gap: 8px; justify-content: center;">
-                    @for ($navOrder = 1; $navOrder <= $total; $navOrder++)
-                        @php($isAnswered = $answeredOrders[$navOrder] ?? false)
-                        @php($navStyle = match (true) {
-                            $navOrder === $order => 'width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border: 2px solid #191919; border-radius: 6px; background: #191919; color: #ffffff; font-size: 14px; font-weight: 900; line-height: 1; box-sizing: border-box;',
-                            $isAnswered => 'width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border: 2px solid #0f766e; border-radius: 6px; background: #0f766e; color: #ffffff; font-size: 14px; font-weight: 900; line-height: 1; box-sizing: border-box;',
-                            default => 'width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border: 2px solid #cfc6b6; border-radius: 6px; background: #ffffff; color: #34312d; font-size: 14px; font-weight: 900; line-height: 1; box-sizing: border-box;',
-                        })
-                        <a
-                            href="{{ route('assessment.questions.show', ['order' => $navOrder]) }}"
-                            aria-label="Buka soal {{ $navOrder }}"
-                            class="@class([
-                                'question-nav-link',
-                                'is-current' => $navOrder === $order,
-                                'is-answered' => $navOrder !== $order && $isAnswered,
-                                'is-unanswered' => $navOrder !== $order && ! $isAnswered,
-                            ])"
-                            style="{{ $navStyle }}"
-                        >
-                            {{ $navOrder }}
-                        </a>
-                    @endfor
-                </div>
-                <div class="mt-4 grid gap-2 text-xs font-semibold text-[#6b665d]">
-                    <p><span class="question-nav-legend-box is-answered mr-2"></span>Terisi</p>
-                    <p><span class="question-nav-legend-box is-unanswered mr-2"></span>Belum terisi</p>
-                </div>
-            </aside>
         </div>
     </section>
 

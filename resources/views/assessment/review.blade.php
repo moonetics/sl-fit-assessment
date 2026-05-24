@@ -6,29 +6,14 @@
             Pastikan semua soal sudah terjawab sebelum submit final. Setelah dikirim, jawaban tidak bisa diubah.
         </p>
 
-        <div class="mt-6 grid gap-3 sm:grid-cols-3">
-            <div class="rounded-md bg-[#f7f5ef] p-4">
-                <p class="text-3xl font-black text-[#191919]">{{ $answered }}</p>
-                <p class="mt-1 text-sm font-semibold text-[#6b665d]">Terjawab</p>
-            </div>
-            <div class="rounded-md bg-[#f7f5ef] p-4">
-                <p class="text-3xl font-black text-[#191919]">{{ $missing }}</p>
-                <p class="mt-1 text-sm font-semibold text-[#6b665d]">Belum terjawab</p>
-            </div>
-            <div class="rounded-md bg-[#f7f5ef] p-4">
-                <p class="text-3xl font-black text-[#191919]">{{ $total }}</p>
-                <p class="mt-1 text-sm font-semibold text-[#6b665d]">Total soal</p>
-            </div>
-        </div>
-
         @if ($missing > 0)
             <div class="mt-6 rounded-md border border-[#e5b4b4] bg-[#fff1f1] p-4">
                 <p class="text-sm font-bold text-[#8f1d1d]">Masih ada soal kosong.</p>
                 <p class="mt-2 text-sm leading-6 text-[#6b665d]">Kamu bisa kembali ke soal yang belum dijawab dari daftar di bawah. Submit final baru bisa dilakukan setelah semuanya lengkap.</p>
                 <div class="mt-4 flex flex-wrap gap-2">
                     @foreach ($missingOrders as $missingOrder)
-                        <a href="{{ route('assessment.questions.show', ['order' => $missingOrder]) }}" class="grid size-10 place-items-center rounded-md border border-[#e5b4b4] bg-white text-sm font-black text-[#8f1d1d] hover:border-[#8f1d1d]">
-                            {{ $missingOrder }}
+                        <a href="{{ route('assessment.questions.show', ['order' => $missingOrder]) }}" class="inline-flex min-h-10 items-center justify-center rounded-md border border-[#e5b4b4] bg-white px-3 text-sm font-black text-[#8f1d1d] hover:border-[#8f1d1d]">
+                            Item kosong {{ $loop->iteration }}
                         </a>
                     @endforeach
                 </div>

@@ -43,6 +43,13 @@
                 @endforeach
             </select>
 
+            <select name="subcategory" class="h-11 rounded-md border border-[#cfc6b6] px-3 text-sm">
+                <option value="">All subcategories</option>
+                @foreach ($subcategories as $subcategory)
+                    <option value="{{ $subcategory }}" @selected(($filters['subcategory'] ?? '') === $subcategory)>{{ $subcategory }}</option>
+                @endforeach
+            </select>
+
             <select name="scoring_direction" class="h-11 rounded-md border border-[#cfc6b6] px-3 text-sm">
                 <option value="">All scoring</option>
                 @foreach ($scoringDirections as $direction)
@@ -85,7 +92,7 @@
             <h2 class="text-2xl font-black">Soal dan metadata</h2>
         </div>
         <div class="overflow-x-auto">
-            <table class="min-w-[1500px] text-left text-sm">
+            <table class="min-w-[1800px] text-left text-sm">
                 <thead class="bg-[#f7f5ef] text-xs uppercase tracking-[0.12em] text-[#6b665d]">
                     <tr>
                         <th class="px-4 py-3">Order</th>
@@ -93,12 +100,15 @@
                         <th class="px-4 py-3">Question</th>
                         <th class="px-4 py-3">Type</th>
                         <th class="px-4 py-3">Category</th>
+                        <th class="px-4 py-3">Subcategory</th>
                         <th class="px-4 py-3">Scoring</th>
                         <th class="px-4 py-3">Options</th>
                         <th class="px-4 py-3">Map</th>
                         <th class="px-4 py-3">Flags</th>
+                        <th class="px-4 py-3">Risk tags</th>
                         <th class="px-4 py-3">Consistency</th>
                         <th class="px-4 py-3">Profile</th>
+                        <th class="px-4 py-3">Basis</th>
                         <th class="px-4 py-3">Active</th>
                     </tr>
                 </thead>
@@ -117,6 +127,7 @@
                                 <span class="rounded-md bg-[#f7f5ef] px-2 py-1 text-xs font-bold">{{ $question->question_type }}</span>
                             </td>
                             <td class="px-4 py-3">{{ $question->category }}</td>
+                            <td class="px-4 py-3">{{ $question->subcategory ?? '-' }}</td>
                             <td class="px-4 py-3">
                                 <span class="rounded-md bg-[#f7f5ef] px-2 py-1 text-xs font-bold">{{ $question->scoring_direction }}</span>
                             </td>
@@ -150,9 +161,21 @@
                                 </div>
                             </td>
                             <td class="px-4 py-3">
+                                <div class="flex flex-wrap gap-1">
+                                    @forelse (($question->risk_tags ?? []) as $tag)
+                                        <span class="rounded-md bg-[#fff8db] px-2 py-1 text-xs font-black text-[#765b08]">{{ $tag }}</span>
+                                    @empty
+                                        <span class="text-[#6b665d]">-</span>
+                                    @endforelse
+                                </div>
+                            </td>
+                            <td class="px-4 py-3">
                                 @if ($question->is_consistency_item || $question->consistency_check)
                                     <div class="space-y-1">
                                         <p class="rounded-md bg-[#fff8db] px-2 py-1 text-xs font-bold text-[#765b08]">{{ $question->consistency_check ?? 'consistency_item' }}</p>
+                                        @if ($question->consistency_pair_id)
+                                            <p class="text-xs font-semibold text-[#514c45]">Pair ID: {{ $question->consistency_pair_id }}</p>
+                                        @endif
                                         @if ($question->consistency_pair)
                                             <p class="text-xs text-[#6b665d]">Pair: {{ implode(', ', $question->consistency_pair) }}</p>
                                         @endif
@@ -168,6 +191,7 @@
                                     <span class="text-[#6b665d]">-</span>
                                 @endif
                             </td>
+                            <td class="px-4 py-3 text-xs font-semibold leading-5 text-[#6b665d]">{{ $question->research_basis ?? '-' }}</td>
                             <td class="px-4 py-3">
                                 <span class="rounded-md px-2 py-1 text-xs font-black {{ $question->is_active ? 'bg-[#eef8f7] text-[#0f766e]' : 'bg-[#fff1f1] text-[#8f1d1d]' }}">
                                     {{ $question->is_active ? 'Active' : 'Inactive' }}
@@ -176,7 +200,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="12" class="px-4 py-8 text-center text-[#6b665d]">Tidak ada soal yang cocok dengan filter.</td>
+                            <td colspan="15" class="px-4 py-8 text-center text-[#6b665d]">Tidak ada soal yang cocok dengan filter.</td>
                         </tr>
                     @endforelse
                 </tbody>

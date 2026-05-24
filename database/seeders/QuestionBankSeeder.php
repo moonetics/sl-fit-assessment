@@ -12,6 +12,8 @@ class QuestionBankSeeder extends Seeder
      */
     public function run(): void
     {
+        Question::query()->update(['display_order' => null]);
+
         foreach ($this->questions() as $question) {
             $question = array_merge(
                 $question,
@@ -150,6 +152,50 @@ class QuestionBankSeeder extends Seeder
             $this->profileLikert(74, 'Jika ada masalah, saya cenderung langsung menyampaikan apa yang saya rasakan.', 'conflict_style', 'E'),
             $this->profileLikert(75, 'Saya lebih memilih membahas konflik secara private atau lewat moderator.', 'conflict_style', 'C'),
             $this->profileLikert(76, 'Saya mudah menunjukkan ketidaksetujuan ketika suasana terasa tidak adil.', 'conflict_style', 'E'),
+
+            $this->likert(77, 'Kalau voice/chat ramai, saya tetap memberi ruang orang lain selesai bicara atau mengetik.', 'Online Behavior', 'normal'),
+            $this->likert(78, 'Saat suasana panas, saya kadang menaruh komentar singkat supaya obrolan makin seru.', 'Drama Risk', 'reverse'),
+
+            $this->situational(79, 'Ada screenshot atau cerita tentang member lain yang belum jelas benar. Apa responsmu?', 'Drama Risk, Online Behavior', [
+                'A' => 'Tidak ikut menyebarkan dan menunggu klarifikasi dari admin/moderator.',
+                'B' => 'Menghindari pembahasan itu sampai ada info yang jelas.',
+                'C' => 'Menanyakan detail ke beberapa orang karena penasaran.',
+                'D' => 'Membagikan screenshot itu agar orang lain tahu duluan.',
+            ], ['A' => 4, 'B' => 3, 'C' => 1, 'D' => 0]),
+            $this->situational(80, 'Admin menegur cara kamu bercanda di public chat karena terasa mengganggu. Apa responsmu?', 'Accountability, Rule Acceptance', [
+                'A' => 'Minta maaf, berhenti dulu, lalu tanya batas bercanda yang aman.',
+                'B' => 'Mengurangi komentar dan lanjut dengan lebih hati-hati.',
+                'C' => 'Menjelaskan panjang di public chat bahwa niatmu cuma bercanda.',
+                'D' => 'Menyindir admin karena terlalu sensitif.',
+            ], ['A' => 4, 'B' => 3, 'C' => 1, 'D' => 0]),
+            $this->situational(81, 'Dalam event tim, teammate kamu lebih lambat dan membuat tim kalah. Apa responsmu?', 'Sportsmanship, Respect for Casual Members', [
+                'A' => 'Tetap bilang good try dan bantu cari cara latihan bareng.',
+                'B' => 'Diam dulu supaya tidak mengeluarkan komentar buruk.',
+                'C' => 'Mengeluh bahwa timmu jadi berat karena dia.',
+                'D' => 'Menyalahkan teammate itu di chat atau voice.',
+            ], ['A' => 4, 'B' => 3, 'C' => 1, 'D' => 0]),
+            $this->situational(82, 'Voice chat mulai ramai, orang saling potong, dan candaan terasa makin tajam. Apa responsmu?', 'Online Behavior, Toxicity Control', [
+                'A' => 'Menurunkan tone, memberi ruang bicara, atau mengajak pindah topik.',
+                'B' => 'Mute sebentar kalau suasananya terlalu ramai.',
+                'C' => 'Ikut menaikkan candaan supaya tidak kalah seru.',
+                'D' => 'Menekan orang lain dengan komentar pedas agar mereka diam.',
+            ], ['A' => 4, 'B' => 3, 'C' => 1, 'D' => 0]),
+
+            $this->likert(83, 'Saya hampir tidak pernah salah membaca suasana chat.', 'Honesty & Consistency', 'reverse_soft', true),
+            $this->likert(84, 'Saya kadang perlu cek ulang maksud orang sebelum merespons.', 'Honesty & Consistency', 'normal_soft', true),
+            $this->likert(85, 'Saya selalu bisa menerima teguran admin tanpa rasa kesal sedikit pun.', 'Honesty & Consistency', 'reverse_soft', true),
+            $this->likert(86, 'Kalau baru ditegur, saya mungkin butuh sebentar sebelum menjawab dengan tenang.', 'Honesty & Consistency', 'normal_soft', true),
+
+            $this->profileLikert(87, 'Saya menikmati event yang butuh koordinasi tim dan saling bantu.', 'team_style', 'T'),
+            $this->profileLikert(88, 'Saya lebih nyaman mengejar progress sendiri sebelum banyak kerja sama tim.', 'team_style', 'I'),
+            $this->profileLikert(89, 'Kompetisi membuat saya makin fokus untuk improve dan mengejar hasil terbaik.', 'competitive_style', 'D'),
+            $this->profileLikert(90, 'Saya bisa kompetitif tanpa membuat lawan atau teammate merasa ditekan.', 'competitive_style', 'G'),
+            $this->profileLikert(91, 'Saat ada drama kecil, saya lebih memilih tidak ikut memperpanjang suasana.', 'drama_resistance', 'L'),
+            $this->profileLikert(92, 'Kalau ada masalah di server, saya cenderung cepat ingin membahasnya agar jelas.', 'drama_resistance', 'R'),
+            $this->profileLikert(93, 'Saya bisa menerima feedback admin sebagai bahan memperbaiki cara main atau cara bicara.', 'feedback_style', 'F'),
+            $this->profileLikert(94, 'Saya lebih nyaman menerima feedback kalau admin menjelaskan alasan dan contohnya.', 'feedback_style', 'J'),
+            $this->profileLikert(95, 'Saya cukup nyaman ikut voice chat saat event atau main bareng.', 'interaction_style', 'V'),
+            $this->profileLikert(96, 'Saya lebih nyaman berinteraksi lewat text chat daripada voice chat.', 'interaction_style', 'T'),
         ];
     }
 
@@ -164,13 +210,17 @@ class QuestionBankSeeder extends Seeder
 
         return [
             'display_order' => $this->displayOrderMap()[$questionNumber],
+            'subcategory' => $this->subcategoryMap()[$questionNumber] ?? null,
             'public_options' => $questionType === 'likert'
                 ? $this->likertPublicOptions()
                 : $question['options'],
             'red_flag_options' => $questionType === 'situational' ? ['D'] : [],
+            'risk_tags' => $this->riskTagMap()[$questionNumber] ?? [],
             'consistency_pair' => $consistency['pair'],
+            'consistency_pair_id' => $consistency['pair_id'],
             'consistency_check' => $consistency['check'],
             'admin_notes' => $consistency['notes'],
+            'research_basis' => $this->researchBasis($question),
             'profile_axis' => $question['profile_axis'] ?? null,
             'profile_pole' => $question['profile_pole'] ?? null,
         ];
@@ -194,9 +244,24 @@ class QuestionBankSeeder extends Seeder
             58,
             ...range(41, 48),
             59,
-            ...range(49, 53),
+            77,
+            49,
+            78,
+            50,
+            79,
+            51,
+            80,
+            52,
+            81,
+            53,
+            82,
             60,
+            83,
+            84,
+            85,
+            86,
             ...range(61, 76),
+            ...range(87, 96),
         ];
 
         $displayOrder = [];
@@ -222,48 +287,140 @@ class QuestionBankSeeder extends Seeder
     }
 
     /**
-     * @return array{pair: array<int>, check: string|null, notes: string|null}
+     * @return array<int, string>
+     */
+    private function subcategoryMap(): array
+    {
+        return [
+            77 => 'Voice-Chat Courtesy',
+            78 => 'Provocation',
+            79 => 'Rumor Containment',
+            80 => 'Admin Feedback',
+            81 => 'Team Sportsmanship',
+            82 => 'Voice-Chat Interaction',
+            83 => 'Social Self-Awareness',
+            84 => 'Social Self-Awareness',
+            85 => 'Feedback Self-Presentation',
+            86 => 'Feedback Self-Regulation',
+            87 => 'Team Style',
+            88 => 'Team Style',
+            89 => 'Competitive Style',
+            90 => 'Competitive Style',
+            91 => 'Drama Resistance',
+            92 => 'Drama Resistance',
+            93 => 'Admin Feedback Style',
+            94 => 'Admin Feedback Style',
+            95 => 'Voice/Chat Interaction Style',
+            96 => 'Voice/Chat Interaction Style',
+        ];
+    }
+
+    /**
+     * @return array<int, array<int, string>>
+     */
+    private function riskTagMap(): array
+    {
+        return [
+            78 => ['provocation', 'drama_amplification'],
+            79 => ['rumor_spreading', 'drama_amplification'],
+            80 => ['admin_resistance', 'public_debate'],
+            81 => ['poor_sportsmanship', 'team_blame'],
+            82 => ['voice_chat_disruption', 'provocation'],
+        ];
+    }
+
+    private function researchBasis(array $question): string
+    {
+        if (($question['question_type'] ?? null) === 'situational') {
+            return 'research-informed situational judgment item';
+        }
+
+        if (($question['is_consistency_item'] ?? false) === true) {
+            return 'research-informed consistency and social desirability check';
+        }
+
+        if (($question['profile_axis'] ?? null) !== null) {
+            return 'research-informed community style indicator';
+        }
+
+        return 'research-informed community behavior item';
+    }
+
+    /**
+     * @return array{pair: array<int>, pair_id: string|null, check: string|null, notes: string|null}
      */
     private function consistencyMetadata(int $questionNumber): array
     {
         return match ($questionNumber) {
             54 => [
                 'pair' => [56],
+                'pair_id' => 'losing_reaction_realism',
                 'check' => 'extreme_perfection_check',
                 'notes' => 'Q54 sangat setuju + Q56 sangat tidak setuju = possible unrealistic perfection.',
             ],
             55 => [
                 'pair' => [],
+                'pair_id' => 'rule_reading_realism',
                 'check' => 'unrealistic_perfection_check',
                 'notes' => 'Q55 sangat setuju + banyak rule items rendah = contradiction.',
             ],
             56 => [
                 'pair' => [54],
+                'pair_id' => 'losing_reaction_realism',
                 'check' => 'self_awareness_pair',
                 'notes' => 'Pairs with Q54 for realistic response to losing.',
             ],
             57 => [
                 'pair' => [],
+                'pair_id' => 'impulse_realism',
                 'check' => 'realistic_self_awareness',
                 'notes' => 'Realistic self-awareness item for impulse control.',
             ],
             58 => [
                 'pair' => [],
+                'pair_id' => 'chat_misunderstanding_realism',
                 'check' => 'impossible_perfection_check',
                 'notes' => 'Q58 sangat setuju + conflict/drama risk rendah = check for impossible perfection.',
             ],
             59 => [
                 'pair' => [21, 40, 48],
+                'pair_id' => 'rule_acceptance_consistency',
                 'check' => 'rule_acceptance_consistency',
                 'notes' => 'Q59 sangat tidak setuju + rule acceptance items tinggi = contradiction.',
             ],
             60 => [
                 'pair' => [21, 40, 48],
+                'pair_id' => 'rule_explanation_consistency',
                 'check' => 'rule_explanation_consistency',
                 'notes' => 'Q60 sangat tidak setuju + Q40 sangat setuju = contradiction; also compare with Q21 and Q48.',
             ],
+            83 => [
+                'pair' => [84],
+                'pair_id' => 'chat_tone_awareness',
+                'check' => 'social_awareness_consistency',
+                'notes' => 'Q83 sangat setuju + Q84 sangat tidak setuju = possible unrealistic tone-reading claim.',
+            ],
+            84 => [
+                'pair' => [83],
+                'pair_id' => 'chat_tone_awareness',
+                'check' => 'social_awareness_consistency',
+                'notes' => 'Pairs with Q83 for realistic chat interpretation.',
+            ],
+            85 => [
+                'pair' => [86],
+                'pair_id' => 'admin_feedback_realism',
+                'check' => 'feedback_perfection_check',
+                'notes' => 'Q85 sangat setuju + Q86 sangat tidak setuju = possible unrealistic feedback response.',
+            ],
+            86 => [
+                'pair' => [85],
+                'pair_id' => 'admin_feedback_realism',
+                'check' => 'feedback_regulation_consistency',
+                'notes' => 'Pairs with Q85 for realistic admin feedback response.',
+            ],
             default => [
                 'pair' => [],
+                'pair_id' => null,
                 'check' => null,
                 'notes' => null,
             ],
@@ -285,14 +442,18 @@ class QuestionBankSeeder extends Seeder
             'text' => $text,
             'question_type' => 'likert',
             'category' => $category,
+            'subcategory' => null,
             'scoring_direction' => $scoringDirection,
             'options' => null,
             'public_options' => null,
             'scoring_map' => null,
             'red_flag_options' => [],
+            'risk_tags' => [],
             'consistency_pair' => [],
+            'consistency_pair_id' => null,
             'consistency_check' => null,
             'admin_notes' => null,
+            'research_basis' => null,
             'profile_axis' => null,
             'profile_pole' => null,
             'is_consistency_item' => $isConsistencyItem,
@@ -314,14 +475,18 @@ class QuestionBankSeeder extends Seeder
             'text' => $text,
             'question_type' => 'likert',
             'category' => 'SL Profile',
+            'subcategory' => null,
             'scoring_direction' => 'normal',
             'options' => null,
             'public_options' => null,
             'scoring_map' => null,
             'red_flag_options' => [],
+            'risk_tags' => [],
             'consistency_pair' => [],
+            'consistency_pair_id' => null,
             'consistency_check' => null,
             'admin_notes' => null,
+            'research_basis' => null,
             'profile_axis' => $axis,
             'profile_pole' => $pole,
             'is_consistency_item' => false,
@@ -346,14 +511,18 @@ class QuestionBankSeeder extends Seeder
             'text' => $text,
             'question_type' => 'situational',
             'category' => $category,
+            'subcategory' => null,
             'scoring_direction' => 'situational',
             'options' => $options,
             'public_options' => $options,
             'scoring_map' => $scoringMap,
             'red_flag_options' => ['D'],
+            'risk_tags' => [],
             'consistency_pair' => [],
+            'consistency_pair_id' => null,
             'consistency_check' => null,
             'admin_notes' => null,
+            'research_basis' => null,
             'profile_axis' => null,
             'profile_pole' => null,
             'is_consistency_item' => false,

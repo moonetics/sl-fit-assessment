@@ -283,6 +283,7 @@ class AssessmentScoringService
                 'question_number' => $question->question_number,
                 'answer_value' => $answerValue,
                 'message' => 'Jawaban situasional masuk red flag berat.',
+                'risk_tags' => $question->risk_tags ?? [],
             ]];
         }
 
@@ -293,6 +294,7 @@ class AssessmentScoringService
                 'question_number' => $question->question_number,
                 'answer_value' => $answerValue,
                 'message' => 'Jawaban situasional menunjukkan risiko sedang.',
+                'risk_tags' => $question->risk_tags ?? [],
             ]];
         }
 
@@ -342,7 +344,7 @@ class AssessmentScoringService
         }
 
         $perfectionIndex = $scorableCount > 0 ? $idealCount / $scorableCount : 0;
-        $extremeHonestyCount = collect([54, 55, 58])
+        $extremeHonestyCount = collect([54, 55, 58, 83, 85])
             ->filter(fn (int $number): bool => (string) $answerByNumber->get($number)?->answer_value === '4')
             ->count();
 
@@ -350,6 +352,14 @@ class AssessmentScoringService
             $flags[] = $this->flag('impossible_perfection', 'high', 'Pola jawaban terlalu sempurna dan didukung klaim ekstrem.');
         } elseif ($perfectionIndex >= $thresholds['perfection_medium']) {
             $flags[] = $this->flag('answer_polishing', 'medium', 'Pola jawaban sangat ideal dan perlu review ringan.');
+        }
+
+        $extremeLikertRate = $likertAnswers->count() > 0
+            ? $likertAnswers->filter(fn (Answer $answer): bool => in_array((string) $answer->answer_value, ['1', '4'], true))->count() / $likertAnswers->count()
+            : 0;
+
+        if ($extremeLikertRate >= 0.92) {
+            $flags[] = $this->flag('extreme_response_pattern', 'medium', 'Pola jawaban ekstrem muncul sangat sering.');
         }
 
         $refreshCount = (int) $sessions->sum('refresh_count');
@@ -387,8 +397,49 @@ class AssessmentScoringService
 
         return [
             ...$flags,
+            ...$this->consistencyPairFlags($answers, $answerByNumber),
             ...$this->contradictionFlags($answerByNumber, $categoryScores),
         ];
+    }
+
+    /**
+     * @param  Collection<int, Answer>  $answers
+     * @param  Collection<int, Answer>  $answerByNumber
+     * @return array<int, array<string, mixed>>
+     */
+    private function consistencyPairFlags(Collection $answers, Collection $answerByNumber): array
+    {
+        $flags = [];
+
+        $answers
+            ->filter(fn (Answer $answer): bool => $answer->question->is_consistency_item && $answer->question->consistency_pair_id)
+            ->groupBy(fn (Answer $answer): string => (string) $answer->question->consistency_pair_id)
+            ->each(function (Collection $group, string $pairId) use (&$flags, $answerByNumber): void {
+                $numbers = $group
+                    ->pluck('question.question_number')
+                    ->map(fn (int $number): int => $number)
+                    ->sort()
+                    ->values()
+                    ->all();
+
+                if (count($numbers) < 2) {
+                    return;
+                }
+
+                $first = (int) $answerByNumber->get($numbers[0])?->answer_value;
+                $second = (int) $answerByNumber->get($numbers[1])?->answer_value;
+
+                if (abs($first - $second) >= 3) {
+                    $flags[] = $this->flag(
+                        'consistency_pair_mismatch',
+                        'medium',
+                        "Pair {$pairId} menunjukkan jawaban yang sangat berjauhan.",
+                        $numbers,
+                    );
+                }
+            });
+
+        return $flags;
     }
 
     /**
@@ -396,38 +447,101 @@ class AssessmentScoringService
      */
     private function emptyProfileBuckets(): array
     {
+        return collect($this->profileAxisDefinitions())
+            ->map(function (array $axis): array {
+                $poles = collect($axis['poles'])
+                    ->map(fn (array $pole): array => [...$pole, 'score' => 0])
+                    ->all();
+
+                return [
+                    ...$axis,
+                    'poles' => $poles,
+                ];
+            })
+            ->all();
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function profileAxisDefinitions(): array
+    {
         return [
             'social' => [
                 'label' => 'Social Energy',
                 'poles' => [
-                    'S' => ['label' => 'Social Connector', 'score' => 0],
-                    'Q' => ['label' => 'Quiet Steady', 'score' => 0],
+                    'S' => ['label' => 'Social Connector'],
+                    'Q' => ['label' => 'Quiet Steady'],
                 ],
                 'neutral' => 'Q',
             ],
             'play_drive' => [
                 'label' => 'Play Drive',
                 'poles' => [
-                    'R' => ['label' => 'Racer Drive', 'score' => 0],
-                    'C' => ['label' => 'Casual Community', 'score' => 0],
+                    'R' => ['label' => 'Racer Drive'],
+                    'C' => ['label' => 'Casual Community'],
                 ],
                 'neutral' => 'C',
             ],
             'rule_style' => [
                 'label' => 'Rule Style',
                 'poles' => [
-                    'A' => ['label' => 'Admin-Aligned', 'score' => 0],
-                    'N' => ['label' => 'Needs Rationale', 'score' => 0],
+                    'A' => ['label' => 'Admin-Aligned'],
+                    'N' => ['label' => 'Needs Rationale'],
                 ],
                 'neutral' => 'A',
             ],
             'conflict_style' => [
                 'label' => 'Conflict Style',
                 'poles' => [
-                    'C' => ['label' => 'Calm Resolver', 'score' => 0],
-                    'E' => ['label' => 'Expressive Responder', 'score' => 0],
+                    'C' => ['label' => 'Calm Resolver'],
+                    'E' => ['label' => 'Expressive Responder'],
                 ],
                 'neutral' => 'C',
+            ],
+            'team_style' => [
+                'label' => 'Team Style',
+                'poles' => [
+                    'T' => ['label' => 'Team-Oriented'],
+                    'I' => ['label' => 'Independent Runner'],
+                ],
+                'neutral' => 'T',
+            ],
+            'competitive_style' => [
+                'label' => 'Competitive Style',
+                'poles' => [
+                    'D' => ['label' => 'Driven Competitor'],
+                    'G' => ['label' => 'Graceful Competitor'],
+                    'B' => ['label' => 'Balanced Competitor', 'virtual' => true],
+                ],
+                'neutral' => 'B',
+            ],
+            'drama_resistance' => [
+                'label' => 'Drama Resistance',
+                'poles' => [
+                    'L' => ['label' => 'Low-Drama Anchor'],
+                    'R' => ['label' => 'Reactive Concern'],
+                    'S' => ['label' => 'Stable Observer', 'virtual' => true],
+                ],
+                'neutral' => 'S',
+            ],
+            'feedback_style' => [
+                'label' => 'Admin Feedback Style',
+                'poles' => [
+                    'F' => ['label' => 'Feedback-Ready'],
+                    'J' => ['label' => 'Justification-Seeking'],
+                    'P' => ['label' => 'Processing First', 'virtual' => true],
+                ],
+                'neutral' => 'P',
+            ],
+            'interaction_style' => [
+                'label' => 'Voice/Chat Interaction Style',
+                'poles' => [
+                    'V' => ['label' => 'Voice-Comfortable'],
+                    'T' => ['label' => 'Text-First'],
+                    'B' => ['label' => 'Balanced Interaction', 'virtual' => true],
+                ],
+                'neutral' => 'B',
             ],
         ];
     }
@@ -443,8 +557,8 @@ class AssessmentScoringService
 
         $buckets[$axis]['poles'][$pole]['score'] += $answerValue;
 
-        foreach (array_keys($buckets[$axis]['poles']) as $otherPole) {
-            if ($otherPole !== $pole) {
+        foreach ($buckets[$axis]['poles'] as $otherPole => $meta) {
+            if ($otherPole !== $pole && empty($meta['virtual'])) {
                 $buckets[$axis]['poles'][$otherPole]['score'] += 5 - $answerValue;
             }
         }
@@ -456,11 +570,13 @@ class AssessmentScoringService
      */
     private function profileResult(array $buckets): array
     {
-        $code = '';
+        $codeParts = [];
         $breakdown = [];
 
         foreach ($buckets as $axis => $bucket) {
-            $scores = collect($bucket['poles'])->map(fn (array $pole): int => (int) $pole['score']);
+            $scores = collect($bucket['poles'])
+                ->filter(fn (array $pole): bool => empty($pole['virtual']))
+                ->map(fn (array $pole): int => (int) $pole['score']);
             $winner = (string) $scores->sortDesc()->keys()->first();
             $topScores = $scores->sortDesc()->values();
 
@@ -472,18 +588,19 @@ class AssessmentScoringService
             $winnerScore = (int) ($scores[$winner] ?? 0);
             $margin = abs($winnerScore - $runnerUp);
 
-            $code .= $winner;
+            $codeParts[] = $winner;
             $breakdown[$axis] = [
                 'label' => $bucket['label'],
                 'selected_pole' => $winner,
                 'selected_label' => $bucket['poles'][$winner]['label'],
-                'scores' => $scores->all(),
+                'scores' => collect($bucket['poles'])->map(fn (array $pole): int => (int) $pole['score'])->all(),
                 'margin' => $margin,
                 'confidence' => $this->profileConfidence($margin),
                 ...$this->profileAxisDetails($axis, $winner),
             ];
         }
 
+        $code = implode('-', $codeParts);
         $profileDetails = $this->profileDetails($code);
         $breakdown['_profile'] = $profileDetails;
 
@@ -629,11 +746,11 @@ class AssessmentScoringService
                 'best_fit' => 'Casual trial atau manual review ringan tergantung risk/honesty.',
             ],
         ][$code] ?? [
-            'name' => 'Community Candidate',
-            'description' => 'Profil komunitas tercatat sebagai konteks tambahan admin.',
-            'strengths' => ['Perlu dilihat bersama category score dan risk reasons.'],
-            'watchouts' => ['Jangan gunakan profile code sebagai vonis tunggal.'],
-            'admin_guidance' => 'Gunakan sebagai bahan onboarding atau interview.',
+            'name' => 'Community Style '.$code,
+            'description' => 'Kode ini merangkum gaya interaksi komunitas peserta berdasarkan axis SL Profile terbaru. Ini indikator research-informed untuk konteks admin, bukan diagnosis, MBTI, label klinis, atau dasar otomatis final decision.',
+            'strengths' => ['Baca bersama profile breakdown per axis untuk melihat potensi kontribusi komunitas.', 'Gunakan bersama category score, risk reasons, dan konteks interview admin.'],
+            'watchouts' => ['Jangan gunakan profile code sebagai vonis tunggal.', 'Confidence rendah pada axis tertentu berarti gaya peserta cenderung seimbang atau butuh konteks tambahan.'],
+            'admin_guidance' => 'Gunakan sebagai bahan onboarding, interview, atau trial expectation; keputusan final tetap perlu review admin.',
             'best_fit' => 'Manual admin context.',
         ];
     }
@@ -699,6 +816,104 @@ class AssessmentScoringService
                 'strengths' => ['Masalah bisa cepat terlihat.', 'Berani menyampaikan ketidaknyamanan.'],
                 'watchouts' => ['Rentan memperpanjang debat jika emosi belum turun.'],
                 'admin_guidance' => 'Tekankan cooldown, private channel, dan aturan anti-flame sejak awal.',
+            ],
+            'team_style:T' => [
+                'summary' => 'Cenderung nyaman bekerja sama dan menjaga koordinasi tim.',
+                'description' => 'Team-Oriented biasanya lebih mudah diajak event yang butuh komunikasi, saling bantu, dan pembagian peran.',
+                'strengths' => ['Membantu ritme event tim.', 'Lebih natural memberi support ke teammate.'],
+                'watchouts' => ['Pastikan tidak terlalu mengambil alih keputusan tim.'],
+                'admin_guidance' => 'Cocok untuk event tim atau onboarding berbasis buddy jika risk rendah.',
+            ],
+            'team_style:I' => [
+                'summary' => 'Lebih nyaman membangun progress sendiri sebelum banyak koordinasi.',
+                'description' => 'Independent Runner biasanya fokus pada performa personal dan bisa tetap cocok selama ekspektasi kerja sama dibuat jelas.',
+                'strengths' => ['Mandiri dan tidak terlalu bergantung pada grup.', 'Cocok untuk time trial atau latihan individual.'],
+                'watchouts' => ['Perlu arahan saat event mengharuskan komunikasi tim.'],
+                'admin_guidance' => 'Berikan role individual lebih dulu, lalu ajak kerja sama secara bertahap.',
+            ],
+            'competitive_style:D' => [
+                'summary' => 'Dorongan kompetitif kuat dan fokus mengejar hasil terbaik.',
+                'description' => 'Driven Competitor biasanya termotivasi oleh leaderboard, improve, dan standar performa tinggi.',
+                'strengths' => ['Bisa menaikkan kualitas race.', 'Konsisten mengejar progress.'],
+                'watchouts' => ['Perlu batas agar tidak menekan member casual atau teammate.'],
+                'admin_guidance' => 'Tekankan sportivitas, etika menang/kalah, dan cara feedback race sejak onboarding.',
+            ],
+            'competitive_style:G' => [
+                'summary' => 'Kompetitif tetapi menjaga lawan dan teammate tetap nyaman.',
+                'description' => 'Graceful Competitor bisa serius mengejar hasil tanpa menjadikan skill sebagai alasan merendahkan orang lain.',
+                'strengths' => ['Cocok untuk race sehat.', 'Bisa jadi contoh kompetisi yang ramah.'],
+                'watchouts' => ['Tetap cek respons saat kalah tipis atau event terasa tidak adil.'],
+                'admin_guidance' => 'Cocok diarahkan ke event kompetitif dengan ekspektasi sportsmanship.',
+            ],
+            'competitive_style:B' => [
+                'summary' => 'Dorongan kompetitif dan kenyamanan sosial terlihat seimbang.',
+                'description' => 'Balanced Competitor biasanya bisa menikmati kompetisi tanpa selalu harus menjadikannya pusat identitas.',
+                'strengths' => ['Fleksibel antara event race dan aktivitas santai.', 'Tidak terlalu mudah terjebak tekanan leaderboard.'],
+                'watchouts' => ['Perlu dilihat konteks category score untuk mengetahui motivasi utama.'],
+                'admin_guidance' => 'Cocok untuk trial umum sambil melihat event mana yang paling natural.',
+            ],
+            'drama_resistance:L' => [
+                'summary' => 'Cenderung menahan diri dan tidak memperpanjang drama kecil.',
+                'description' => 'Low-Drama Anchor biasanya membantu suasana tetap stabil saat ada rumor, salah paham, atau komentar panas.',
+                'strengths' => ['Mengurangi eskalasi.', 'Cocok untuk komunitas yang butuh stabilitas chat.'],
+                'watchouts' => ['Bisa terlalu diam saat perlu melapor masalah.'],
+                'admin_guidance' => 'Pastikan tahu jalur report private jika melihat masalah serius.',
+            ],
+            'drama_resistance:R' => [
+                'summary' => 'Cepat ingin membahas masalah agar terasa jelas.',
+                'description' => 'Reactive Concern bisa membantu isu cepat terlihat, tetapi perlu kanal agar pembahasan tidak berubah menjadi drama publik.',
+                'strengths' => ['Masalah tidak selalu dipendam.', 'Bisa memberi sinyal awal jika ada gesekan.'],
+                'watchouts' => ['Rentan memperbesar isu jika dibahas di public chat.'],
+                'admin_guidance' => 'Arahkan ke mod ticket/private channel dan batasi pembahasan rumor.',
+            ],
+            'drama_resistance:S' => [
+                'summary' => 'Stabil di tengah isu, tetapi tetap perlu konteks tambahan.',
+                'description' => 'Stable Observer menunjukkan pola seimbang antara tidak memperkeruh suasana dan tetap ingin memahami masalah.',
+                'strengths' => ['Tidak mudah terseret drama.', 'Masih bisa diajak klarifikasi dengan tenang.'],
+                'watchouts' => ['Respons bisa berubah tergantung kedekatan dengan pihak yang terlibat.'],
+                'admin_guidance' => 'Gunakan interview ringan untuk melihat cara menangani rumor atau konflik teman dekat.',
+            ],
+            'feedback_style:F' => [
+                'summary' => 'Relatif siap menerima feedback admin sebagai bahan perbaikan.',
+                'description' => 'Feedback-Ready biasanya lebih mudah diarahkan saat ada teguran atau perubahan aturan.',
+                'strengths' => ['Onboarding lebih lancar.', 'Cenderung memperbaiki perilaku setelah ditegur.'],
+                'watchouts' => ['Tetap pastikan feedback disampaikan jelas dan tidak mempermalukan.'],
+                'admin_guidance' => 'Cocok dengan onboarding standar dan feedback langsung yang sopan.',
+            ],
+            'feedback_style:J' => [
+                'summary' => 'Membutuhkan alasan dan contoh sebelum feedback terasa masuk akal.',
+                'description' => 'Justification-Seeking bukan berarti menolak feedback; peserta biasanya lebih kooperatif setelah memahami konteksnya.',
+                'strengths' => ['Bisa membantu admin menjelaskan aturan lebih rapi.', 'Sering memberi masukan detail.'],
+                'watchouts' => ['Bisa terlihat defensif jika teguran terlalu singkat.'],
+                'admin_guidance' => 'Berikan alasan singkat, contoh perilaku, dan batas diskusi publik.',
+            ],
+            'feedback_style:P' => [
+                'summary' => 'Butuh jeda untuk memproses feedback sebelum merespons tenang.',
+                'description' => 'Processing First biasanya tidak langsung nyaman saat ditegur, tetapi bisa membaik jika diberi ruang cooldown.',
+                'strengths' => ['Dapat menghindari respons impulsif jika diberi waktu.', 'Cocok dengan feedback private.'],
+                'watchouts' => ['Respons awal mungkin tampak pasif atau tertahan.'],
+                'admin_guidance' => 'Gunakan private feedback dan beri waktu sebelum follow-up.',
+            ],
+            'interaction_style:V' => [
+                'summary' => 'Cukup nyaman berinteraksi lewat voice saat event atau main bareng.',
+                'description' => 'Voice-Comfortable biasanya lebih mudah terlibat dalam aktivitas real-time yang butuh koordinasi cepat.',
+                'strengths' => ['Membantu koordinasi event.', 'Cepat membangun keakraban saat main bareng.'],
+                'watchouts' => ['Pastikan tetap memberi ruang bicara dan menjaga tone.'],
+                'admin_guidance' => 'Cocok diarahkan ke event voice dengan aturan komunikasi yang jelas.',
+            ],
+            'interaction_style:T' => [
+                'summary' => 'Lebih nyaman memakai text chat daripada voice.',
+                'description' => 'Text-First biasanya butuh ruang komunikasi yang tidak terlalu ramai dan bisa tetap aktif lewat chat.',
+                'strengths' => ['Lebih terukur saat menyampaikan pesan.', 'Cocok untuk member yang tidak selalu nyaman voice.'],
+                'watchouts' => ['Jangan dianggap kurang engage hanya karena jarang voice.'],
+                'admin_guidance' => 'Berikan opsi text coordination dan jangan memaksa voice untuk semua aktivitas.',
+            ],
+            'interaction_style:B' => [
+                'summary' => 'Fleksibel antara voice dan text sesuai situasi.',
+                'description' => 'Balanced Interaction biasanya bisa menyesuaikan medium komunikasi selama aturan dan suasananya nyaman.',
+                'strengths' => ['Mudah masuk ke berbagai jenis event.', 'Bisa menjembatani member voice dan text.'],
+                'watchouts' => ['Preferensi bisa berubah tergantung channel dan orang yang terlibat.'],
+                'admin_guidance' => 'Coba beberapa format event untuk melihat medium paling natural.',
             ],
         ]["{$axis}:{$pole}"] ?? [
             'summary' => 'Profil komunitas tercatat untuk konteks admin.',
@@ -800,6 +1015,26 @@ class AssessmentScoringService
 
         if ($answer(60) === '1' && $answer(40) === '4') {
             $flags[] = $this->flag('contradiction', 'medium', 'Q60 dan Q40 menunjukkan respons aturan yang bertentangan.', [60, 40]);
+        }
+
+        if ($answer(83) === '4' && $answer(84) === '1') {
+            $flags[] = $this->flag('contradiction', 'medium', 'Q83 dan Q84 menunjukkan klaim membaca suasana chat yang bertentangan.', [83, 84]);
+        }
+
+        if ($answer(85) === '4' && $answer(86) === '1') {
+            $flags[] = $this->flag('contradiction', 'medium', 'Q85 dan Q86 menunjukkan klaim menerima teguran yang terlalu bertentangan.', [85, 86]);
+        }
+
+        if ($answer(85) === '4' && in_array($answer(80), ['C', 'D'], true)) {
+            $flags[] = $this->flag('self_report_sjt_contradiction', 'medium', 'Klaim selalu menerima teguran bertentangan dengan respons situasional terhadap teguran admin.', [85, 80]);
+        }
+
+        if (($answer(78) === '1' || ($categoryScores['Drama Risk']['score'] ?? 100) >= 80) && in_array($answer(79), ['C', 'D'], true)) {
+            $flags[] = $this->flag('self_report_sjt_contradiction', 'medium', 'Self-report low-drama bertentangan dengan respons situasional terhadap rumor/screenshot.', [78, 79]);
+        }
+
+        if (($categoryScores['Sportsmanship']['score'] ?? 100) >= 80 && in_array($answer(81), ['C', 'D'], true)) {
+            $flags[] = $this->flag('self_report_sjt_contradiction', 'medium', 'Sportsmanship tinggi bertentangan dengan respons situasional saat teammate lambat.', [81]);
         }
 
         return $flags;

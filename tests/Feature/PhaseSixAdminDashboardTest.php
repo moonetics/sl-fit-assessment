@@ -122,17 +122,18 @@ class PhaseSixAdminDashboardTest extends TestCase
             ->assertOk()
             ->assertSee('Assessment Questions')
             ->assertSee('Active Questions')
-            ->assertSee('76')
+            ->assertSee('96')
             ->assertSee('Community Fit')
             ->assertSee('Situational')
             ->assertSee('Honesty Check')
             ->assertSee('SL Profile')
             ->assertSee('Saya menjaga bahasa chat')
             ->assertSee('Online Behavior')
+            ->assertSee('research-informed community behavior item')
             ->assertSee('normal')
             ->assertSee('Red flag only');
 
-        $this->assertSame(76, Question::query()->where('is_active', true)->count());
+        $this->assertSame(96, Question::query()->where('is_active', true)->count());
     }
 
     public function test_admin_question_bank_filters_by_search_type_profile_consistency_and_red_flags(): void
@@ -155,6 +156,11 @@ class PhaseSixAdminDashboardTest extends TestCase
             ->assertSee('memulai obrolan ringan')
             ->assertSee('social / S')
             ->assertDontSee('Leaderboard dan improve time');
+
+        $this->get(route('admin.questions.index', ['profile_axis' => 'interaction_style']))
+            ->assertOk()
+            ->assertSee('lebih nyaman berinteraksi lewat text')
+            ->assertSee('interaction_style / T');
 
         $this->get(route('admin.questions.index', ['consistency_only' => '1']))
             ->assertOk()

@@ -60,6 +60,23 @@ class PhaseFourSessionSafetyTest extends TestCase
         $this->assertSame(0, Answer::query()->count());
     }
 
+    public function test_autosave_accepts_dynamic_last_display_order(): void
+    {
+        $participant = $this->startedParticipant();
+        $session = $this->assessmentSession($participant);
+        $question = app(\App\Services\QuestionOrderService::class)->questionForOrder($participant, 96);
+
+        $this->withSession([
+            'participant_id' => $participant->id,
+            'assessment_session_id' => $session->id,
+        ])->putJson(route('api.answers.autosave'), [
+            'display_order' => 96,
+            'answer_value' => (string) array_key_first($question?->public_options ?? []),
+        ])->assertOk();
+
+        $this->assertSame(1, Answer::query()->where('participant_id', $participant->id)->count());
+    }
+
     public function test_autosave_rejects_closed_access_code_statuses(): void
     {
         foreach ([AccessCode::STATUS_COMPLETED, AccessCode::STATUS_EXPIRED, AccessCode::STATUS_LOCKED] as $status) {

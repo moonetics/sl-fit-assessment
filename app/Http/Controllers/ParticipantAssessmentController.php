@@ -172,7 +172,7 @@ class ParticipantAssessmentController extends Controller
             'participantId' => $participant->id,
             'order' => $order,
             'total' => $total,
-            'progress' => (int) round(($order / $total) * 100),
+            'progress' => $this->smoothedProgress($participant, $order, $total),
             'answeredOrders' => $answeredOrders,
             'missingOrders' => $this->missingOrders($total, $answeredOrders),
             'glossaryNotes' => $this->glossaryNotes($question),
@@ -445,6 +445,31 @@ class ParticipantAssessmentController extends Controller
         }
 
         return $missing;
+    }
+
+    private function smoothedProgress(Participant $participant, int $order, int $total): int
+    {
+        if ($total <= 1 || $order >= $total) {
+            return 100;
+        }
+
+        $progress = 0;
+
+        for ($step = 1; $step <= $order; $step++) {
+            $ratio = $step / $total;
+            $base = 4 + (pow($ratio, 0.78) * 92);
+            $jitterSeed = crc32($participant->id.'|'.$participant->access_code_id.'|'.$step);
+            $jitter = ($jitterSeed % 5) - 2;
+            $candidate = (int) floor($base + $jitter);
+
+            if ($step < $total) {
+                $candidate = min(99, $candidate);
+            }
+
+            $progress = max($progress, $candidate);
+        }
+
+        return max(1, min(99, $progress));
     }
 
     /**

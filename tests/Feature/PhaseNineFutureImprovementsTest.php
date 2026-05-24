@@ -87,7 +87,7 @@ class PhaseNineFutureImprovementsTest extends TestCase
             'resume_count' => 99,
             'device_count' => 2,
             'min_answer_seconds' => 0,
-            'fast_answer_count' => 60,
+            'fast_answer_count' => 80,
             'visibility_change_count' => 99,
             'offline_sync_count' => 99,
         ])->assertRedirect();
@@ -173,9 +173,9 @@ class PhaseNineFutureImprovementsTest extends TestCase
         $snapshotAgain = $service->ensureSnapshot($participant->fresh());
         $canonical = Question::query()->where('is_active', true)->orderBy('display_order')->pluck('question_number')->all();
 
-        $this->assertCount(76, $snapshot);
+        $this->assertCount(96, $snapshot);
         $this->assertSame($snapshot, $snapshotAgain);
-        $this->assertSame(range(1, 76), collect($snapshot)->sort()->values()->all());
+        $this->assertSame(range(1, 96), collect($snapshot)->sort()->values()->all());
         $this->assertNotSame($canonical, $snapshot);
         $this->assertSame(1, $service->questionForOrder($participant->fresh(), 1)?->question_number);
     }
@@ -197,9 +197,22 @@ class PhaseNineFutureImprovementsTest extends TestCase
 
         $snapshot = app(QuestionOrderService::class)->ensureSnapshot($participant);
 
-        $this->assertCount(76, $snapshot);
+        $this->assertCount(96, $snapshot);
         $this->assertSame(range(1, 60), array_slice($snapshot, 0, 60));
-        $this->assertSame(range(61, 76), array_slice($snapshot, 60));
+        $this->assertSame([
+            77,
+            78,
+            79,
+            80,
+            81,
+            82,
+            83,
+            84,
+            85,
+            86,
+            ...range(61, 76),
+            ...range(87, 96),
+        ], array_slice($snapshot, 60));
     }
 
     private function actingAsAdmin(): Admin

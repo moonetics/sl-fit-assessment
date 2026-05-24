@@ -30,8 +30,8 @@ class PhaseFiveScoringEngineTest extends TestCase
         $this->assertSame('Valid', $result->honesty_status);
         $this->assertSame('Competitive Racer', $result->member_type);
         $this->assertSame('Accepted', $result->final_status);
-        $this->assertSame('QCAC', $result->profile_code);
-        $this->assertSame('Steady Supporter', $result->profile_name);
+        $this->assertSame('Q-C-A-C-T-B-S-P-B', $result->profile_code);
+        $this->assertSame('Community Style Q-C-A-C-T-B-S-P-B', $result->profile_name);
         $this->assertNotEmpty($result->profile_breakdown);
         $this->assertArrayHasKey('_profile', $result->profile_breakdown);
         $this->assertArrayHasKey('description', $result->profile_breakdown['_profile']);
@@ -86,6 +86,8 @@ class PhaseFiveScoringEngineTest extends TestCase
             23 => '1',
             24 => '4',
             45 => '1',
+            77 => '1',
+            78 => '4',
         ]);
 
         $result = app(AssessmentScoringService::class)->score($participant);
@@ -170,16 +172,28 @@ class PhaseFiveScoringEngineTest extends TestCase
             74 => '1',
             75 => '4',
             76 => '1',
+            87 => '4',
+            88 => '1',
+            89 => '4',
+            90 => '1',
+            91 => '4',
+            92 => '1',
+            93 => '4',
+            94 => '1',
+            95 => '4',
+            96 => '1',
         ]);
 
         $result = app(AssessmentScoringService::class)->score($participant);
 
-        $this->assertSame('SRAC', $result->profile_code);
-        $this->assertSame('Composed Race Captain', $result->profile_name);
+        $this->assertSame('S-R-A-C-T-D-L-F-V', $result->profile_code);
+        $this->assertSame('Community Style S-R-A-C-T-D-L-F-V', $result->profile_name);
         $this->assertSame('Accepted', $result->final_status);
         $this->assertArrayHasKey('social', $result->profile_breakdown);
+        $this->assertArrayHasKey('interaction_style', $result->profile_breakdown);
         $this->assertSame('High', $result->profile_breakdown['social']['confidence']);
         $this->assertStringContainsString('Aktif', $result->profile_breakdown['social']['summary']);
+        $this->assertStringContainsString('research-informed', $result->profile_breakdown['_profile']['description']);
     }
 
     public function test_questionable_honesty_forces_manual_review(): void
@@ -195,6 +209,26 @@ class PhaseFiveScoringEngineTest extends TestCase
 
         $this->assertSame('Questionable', $result->honesty_status);
         $this->assertSame('Manual Review', $result->final_status);
+    }
+
+    public function test_extended_consistency_and_sjt_contradictions_create_suspicious_flags(): void
+    {
+        $participant = $this->participantWithAnswers([
+            78 => '1',
+            79 => 'D',
+            83 => '4',
+            84 => '1',
+            85 => '4',
+            86 => '1',
+            80 => 'D',
+        ]);
+
+        $result = app(AssessmentScoringService::class)->score($participant);
+        $types = collect($result->suspicious_flags)->pluck('type')->all();
+
+        $this->assertContains('consistency_pair_mismatch', $types);
+        $this->assertContains('self_report_sjt_contradiction', $types);
+        $this->assertSame('Questionable', $result->honesty_status);
     }
 
     public function test_final_submit_creates_only_one_result(): void
@@ -308,6 +342,12 @@ class PhaseFiveScoringEngineTest extends TestCase
             51 => 'C',
             52 => 'C',
             53 => 'C',
+            77 => '1',
+            78 => '4',
+            79 => 'C',
+            80 => 'C',
+            81 => 'C',
+            82 => 'C',
         ];
     }
 }

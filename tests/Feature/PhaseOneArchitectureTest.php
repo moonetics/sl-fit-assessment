@@ -57,14 +57,14 @@ class PhaseOneArchitectureTest extends TestCase
         ]);
     }
 
-    public function test_question_bank_seeder_creates_seventy_six_active_questions(): void
+    public function test_question_bank_seeder_creates_ninety_six_active_questions(): void
     {
         $this->seed(QuestionBankSeeder::class);
 
-        $this->assertSame(76, Question::query()->where('is_active', true)->count());
-        $this->assertSame(8, Question::query()->where('question_type', 'situational')->count());
-        $this->assertSame(7, Question::query()->where('is_consistency_item', true)->count());
-        $this->assertSame(16, Question::query()->whereNotNull('profile_axis')->count());
+        $this->assertSame(96, Question::query()->where('is_active', true)->count());
+        $this->assertSame(12, Question::query()->where('question_type', 'situational')->count());
+        $this->assertSame(11, Question::query()->where('is_consistency_item', true)->count());
+        $this->assertSame(26, Question::query()->whereNotNull('profile_axis')->count());
         $this->assertNotNull(Question::query()->where('question_number', 46)->value('options'));
     }
 

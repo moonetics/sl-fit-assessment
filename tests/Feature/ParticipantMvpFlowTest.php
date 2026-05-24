@@ -128,13 +128,13 @@ class ParticipantMvpFlowTest extends TestCase
 
         $this->get(route('assessment.questions.show', ['order' => 1]))
             ->assertOk()
-            ->assertSee('Soal 1 dari 76')
+            ->assertSee('Pilih jawaban yang paling terasa cocok')
             ->assertSee('Sangat tidak setuju')
-            ->assertSee('Navigasi soal')
             ->assertSee('Lewati dulu')
-            ->assertSee('question-nav-link', false)
-            ->assertSee('is-current', false)
-            ->assertSee('is-unanswered', false)
+            ->assertSee('role="progressbar"', false)
+            ->assertDontSee('Soal 1 dari')
+            ->assertDontSee('Navigasi soal')
+            ->assertDontSee('question-nav-link', false)
             ->assertDontSee('Perkiraan waktu')
             ->assertDontSee('Online Behavior')
             ->assertDontSee('scoring_direction')
@@ -152,7 +152,7 @@ class ParticipantMvpFlowTest extends TestCase
 
         $this->get(route('assessment.questions.show', ['order' => 2]))
             ->assertOk()
-            ->assertSee('question-nav-link is-answered', false);
+            ->assertDontSee('question-nav-link', false);
     }
 
     public function test_question_can_be_skipped_without_creating_answer_and_review_lists_missing_orders(): void
@@ -173,6 +173,8 @@ class ParticipantMvpFlowTest extends TestCase
         $this->get(route('assessment.review'))
             ->assertOk()
             ->assertSee('Masih ada soal kosong')
+            ->assertSee('Item kosong 1')
+            ->assertDontSee('Total soal')
             ->assertSee(route('assessment.questions.show', ['order' => 1]), false);
     }
 
@@ -245,6 +247,30 @@ class ParticipantMvpFlowTest extends TestCase
         ])->assertRedirect(route('assessment.questions.show', ['order' => 1]));
     }
 
+    public function test_smoothed_progress_is_monotonic_and_reaches_one_hundred_on_last_question(): void
+    {
+        $participant = $this->startedParticipant();
+
+        $this->withSession([
+            'access_code_id' => $participant->access_code_id,
+            'participant_id' => $participant->id,
+        ]);
+
+        $previous = 0;
+
+        foreach ([1, 12, 24, 48, 72, 95, 96] as $order) {
+            $response = $this->get(route('assessment.questions.show', ['order' => $order]))
+                ->assertOk();
+            preg_match('/aria-valuenow="(\d+)"/', $response->getContent(), $matches);
+
+            $progress = (int) ($matches[1] ?? 0);
+            $this->assertGreaterThanOrEqual($previous, $progress);
+            $previous = $progress;
+        }
+
+        $this->assertSame(100, $previous);
+    }
+
     public function test_complete_assessment_sets_code_to_completed_and_blocks_reuse(): void
     {
         $participant = $this->startedParticipant();
@@ -268,7 +294,7 @@ class ParticipantMvpFlowTest extends TestCase
 
         $this->get(route('assessment.review'))
             ->assertOk()
-            ->assertSee('76')
+            ->assertDontSee('Total soal')
             ->assertSee('Submit final');
 
         $this->post(route('assessment.submit'), [
